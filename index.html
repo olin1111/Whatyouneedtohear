@@ -4,23 +4,87 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>What do you need to hear today?</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
     <style>
         body {
             margin: 0;
             padding: 0;
-            overflow: hidden;
+            background-color: #ffe0e6;
             font-family: Arial, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
         }
-        canvas {
-            display: block;
+        
+        .prompt {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            transition: top 0.5s ease;
+            color: #333;
+        }
+        
+        .prompt.center {
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .prompt.top {
+            top: 80px;
+            transform: translateX(-50%);
+        }
+        
+        .prompt h1 {
+            font-size: 32px;
+            margin: 0 0 10px 0;
+        }
+        
+        .prompt p {
+            font-size: 15px;
+            margin: 5px 0;
+        }
+        
+        .quote-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-size: 24px;
+            color: #333;
+            width: 80%;
+            line-height: 1.6;
+            display: none;
+        }
+        
+        @media (max-width: 600px) {
+            .prompt h1 {
+                font-size: 26px;
+            }
+            .quote-display {
+                font-size: 20px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .prompt h1 {
+                font-size: 20px;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="prompt center" id="prompt">
+        <h1>What do you need to hear today?</h1>
+        <p>Random advice from strangers to strangers: tap to unlock</p>
+        <p>@olinland_ / @coolgirlolin</p>
+    </div>
+    
+    <div class="quote-display" id="quote-display"></div>
+
     <script>
         let quotes = [
-            “I”f nothing changes, nothing changes,
+            "If nothing changes, nothing changes",
             "You are already blessed in so many ways, focus on that",
             "Acting like you don't care is not letting go",
             "There's a future version of you who's proud you were strong enough",
@@ -45,21 +109,21 @@
             "Life doesn't end when you gain weight",
             "Life doesn't end when you get rejected",
             "You can be very proud of yourself, you are doing very well",
-            "It will always be okay, just think of that one time you thought it wasn't going to be okay."
-            “Being unique is a gift”,
+            "It will always be okay, just think of that one time you thought it wasn't going to be okay",
+            "Being unique is a gift",
             "The world is kinder to you than you think",
             "Life doesn't end when you open up to someone",
             "Demand a lot from yourself, expect little from others, that will save you a lot of annoyance",
             "Hey champ, you really should trust yourself a little more",
-            "Positive people also have negative thoughts. That is normal. But what they don’t do is let these thoughts grow unnecessarily",
+            "Positive people also have negative thoughts. That is normal. But what they don't do is let these thoughts grow unnecessarily",
             "There will be no one you talk to as much as yourself. Make it a fun, positive, uplifting conversation. As often as possible.",
-            "Spend time with people who give you energy, not people who drain it”,
-            “You have enough time to do everything you want. There is no rush",
+            "Spend time with people who give you energy, not people who drain it",
+            "You have enough time to do everything you want. There is no rush",
             "Talk about it. As much as you want",
-            “Don’t say goodbye when you’re fighting”,
+            "Don't say goodbye when you're fighting",
             "You get what you fight for, not what you wish for",
             "Don't make yourself less fun by adapting to someone else",
-            “Your purpose will give you energy”,
+            "Your purpose will give you energy",
             "The chains that hold you back were never put there by someone else",
             "Asking for help doesn't mean you give up, it means you refuse to give up",
             "If you ever get the chance to treat them the way they treated you, I hope you choose to walk away and do better",
@@ -73,117 +137,59 @@
 
         let selectedQuote = "";
         let quoteActive = false;
-
         let flashCounter = 0;
-        let flashDuration = 60;
+        let flashDuration = 60; // Same as your original
         let flashInterval = 1;
         let flashPhase = true;
-
-        let promptY;
-        let promptTargetY;
-        let promptSliding = false;
-
-        function setup() {
-            createCanvas(windowWidth, windowHeight);
-            textAlign(CENTER, CENTER);
-            rectMode(CENTER);
-            promptY = height / 2;
-            promptTargetY = 80;
-            noLoop();
-        }
-
-        function draw() {
-            // Light pink background
-            background(255, 192, 203);
-
-            // Prompt slide
-            if (promptSliding) {
-                promptY = lerp(promptY, promptTargetY, 0.05);
-                if (abs(promptY - promptTargetY) < 1) {
-                    promptY = promptTargetY;
-                    promptSliding = false;
-                }
-            }
-
-            drawPrompt(promptY);
-
-            if (quoteActive) {
-                // Flash-fase (timer cycling through quotes quickly)
-                if (flashPhase) {
-                    if (frameCount % flashInterval === 0) {
-                        selectRandomQuote();
-                    }
-                    flashCounter++;
-                    if (flashCounter >= flashDuration) {
-                        flashPhase = false;
-                    }
-                }
-
-                // Quote tonen
-                fill(0);
-                textSize(24);
-                text(selectedQuote, width / 2, height / 2 + 50, width * 0.8);
-            }
-        }
-
-        function drawPrompt(y) {
-            fill(50);
-            textAlign(CENTER, CENTER);
-
-            if (width < 400) textSize(20);
-            else if (width < 600) textSize(26);
-            else textSize(32);
-            text("What do you need to hear today?", width / 2, y - 20);
-
-            textSize(15);
-            text("Random advice from strangers to strangers: tap to unlock", width / 2, y + 10);
-            text("@olinland_ / @coolgirlolin", width / 2, y + 40);
-        }
+        let animationId;
 
         function selectRandomQuote() {
-            let index = int(random(quotes.length));
+            let index = Math.floor(Math.random() * quotes.length);
             selectedQuote = quotes[index];
+            document.getElementById('quote-display').textContent = selectedQuote;
+        }
+
+        function flashQuotes() {
+            if (flashPhase) {
+                if (flashCounter % flashInterval === 0) {
+                    selectRandomQuote();
+                }
+                flashCounter++;
+                if (flashCounter >= flashDuration) {
+                    flashPhase = false;
+                    return; // Stop the animation
+                }
+                animationId = requestAnimationFrame(flashQuotes);
+            }
         }
 
         function userInteracted() {
             if (!quoteActive) {
-                try {
-                    if (getAudioContext) {
-                        getAudioContext().resume();
-                    }
-                } catch(e) {
-                    // Audio context not available, continue anyway
-                }
                 quoteActive = true;
                 flashCounter = 0;
                 flashPhase = true;
-                promptSliding = true;
-                loop();
+                
+                // Move prompt to top
+                document.getElementById('prompt').className = 'prompt top';
+                
+                // Show quote display
+                document.getElementById('quote-display').style.display = 'block';
+                
+                // Start flashing quotes
+                flashQuotes();
             }
-            return false;
         }
 
-        function mousePressed() {
+        // Event listeners
+        document.addEventListener('click', userInteracted);
+        document.addEventListener('touchstart', function(e) {
+            e.preventDefault();
             userInteracted();
-            return false;
-        }
-
-        function touchStarted() {
+        });
+        document.addEventListener('touchend', function(e) {
+            e.preventDefault();
             userInteracted();
-            return false;
-        }
-
-        function touchEnded(event) {
-            if (event) event.preventDefault();
-            userInteracted();
-            return false;
-        }
-
-        function windowResized() {
-            resizeCanvas(windowWidth, windowHeight);
-            promptY = quoteActive ? 80 : height / 2;
-            promptTargetY = 80;
-        }
+        });
     </script>
 </body>
 </html>
