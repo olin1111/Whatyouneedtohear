@@ -10,54 +10,50 @@
             padding: 0;
             background-color: #ffe0e6;
             font-family: Arial, sans-serif;
+            overflow: hidden;
             height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-        }
-        
-        .container {
-            width: 90%;
-            max-width: 600px;
+            position: relative;
         }
         
         .prompt {
-            transition: all 0.5s ease;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            transition: top 0.5s ease;
+            color: #333;
         }
         
-        .prompt.moved {
-            position: fixed;
-            top: 60px;
-            left: 50%;
+        .prompt.center {
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .prompt.top {
+            top: 80px;
             transform: translateX(-50%);
         }
         
         .prompt h1 {
             font-size: 32px;
-            margin: 0 0 20px 0;
-            color: #333;
+            margin: 0 0 10px 0;
         }
         
         .prompt p {
             font-size: 15px;
-            margin: 10px 0;
-            color: #666;
+            margin: 5px 0;
         }
         
-        .quote-area {
-            margin-top: 100px;
+        .quote-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
             font-size: 24px;
             color: #333;
+            width: 80%;
             line-height: 1.6;
-            min-height: 200px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .quote-area.hidden {
             display: none;
         }
         
@@ -65,7 +61,7 @@
             .prompt h1 {
                 font-size: 26px;
             }
-            .quote-area {
+            .quote-display {
                 font-size: 20px;
             }
         }
@@ -74,27 +70,20 @@
             .prompt h1 {
                 font-size: 20px;
             }
-            .quote-area {
-                font-size: 18px;
-            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="prompt" id="prompt">
-            <h1>What do you need to hear today?</h1>
-            <p>Random advice from strangers to strangers: tap to unlock</p>
-            <p>@olinland_ / @coolgirlolin</p>
-        </div>
-        
-        <div class="quote-area hidden" id="quote-area">
-            <div id="quote-text">Click to start</div>
-        </div>
+    <div class="prompt center" id="prompt">
+        <h1>What do you need to hear today?</h1>
+        <p>Random advice from strangers to strangers: tap to unlock</p>
+        <p>@olinland_ / @coolgirlolin</p>
     </div>
+    
+    <div class="quote-display" id="quote-display"></div>
 
     <script>
-        var quotes = [
+        let quotes = [
             "If nothing changes, nothing changes",
             "You are already blessed in so many ways, focus on that",
             "Acting like you don't care is not letting go",
@@ -123,6 +112,7 @@
             "It will always be okay, just think of that one time you thought it wasn't going to be okay",
             "Being unique is a gift",
             "The world is kinder to you than you think",
+            "Life doesn't end when you open up to someone",
             "Demand a lot from yourself, expect little from others, that will save you a lot of annoyance",
             "Hey champ, you really should trust yourself a little more",
             "Positive people also have negative thoughts. That is normal. But what they don't do is let these thoughts grow unnecessarily",
@@ -145,54 +135,60 @@
             "Love others from your heart and not from your needs"
         ];
 
-        var currentQuote = "";
-        var isActive = false;
-        var flashCount = 0;
-        var maxFlashes = 60;
-        var flashTimer;
+        let selectedQuote = "";
+        let quoteActive = false;
+        let flashCounter = 0;
+        let flashDuration = 60; // Same as your original
+        let flashInterval = 1;
+        let flashPhase = true;
+        let animationId;
 
-        function getRandomQuote() {
-            var randomIndex = Math.floor(Math.random() * quotes.length);
-            return quotes[randomIndex];
+        function selectRandomQuote() {
+            let index = Math.floor(Math.random() * quotes.length);
+            selectedQuote = quotes[index];
+            document.getElementById('quote-display').textContent = selectedQuote;
         }
 
-        function updateQuote() {
-            currentQuote = getRandomQuote();
-            document.getElementById('quote-text').textContent = currentQuote;
-        }
-
-        function startFlashing() {
-            flashTimer = setInterval(function() {
-                updateQuote();
-                flashCount++;
-                
-                if (flashCount >= maxFlashes) {
-                    clearInterval(flashTimer);
+        function flashQuotes() {
+            if (flashPhase) {
+                if (flashCounter % flashInterval === 0) {
+                    selectRandomQuote();
                 }
-            }, 16); // About 60fps
+                flashCounter++;
+                if (flashCounter >= flashDuration) {
+                    flashPhase = false;
+                    return; // Stop the animation
+                }
+                animationId = requestAnimationFrame(flashQuotes);
+            }
         }
 
-        function activate() {
-            if (!isActive) {
-                isActive = true;
+        function userInteracted() {
+            if (!quoteActive) {
+                quoteActive = true;
+                flashCounter = 0;
+                flashPhase = true;
                 
                 // Move prompt to top
-                document.getElementById('prompt').classList.add('moved');
+                document.getElementById('prompt').className = 'prompt top';
                 
-                // Show quote area
-                document.getElementById('quote-area').classList.remove('hidden');
+                // Show quote display
+                document.getElementById('quote-display').style.display = 'block';
                 
                 // Start flashing quotes
-                flashCount = 0;
-                startFlashing();
+                flashQuotes();
             }
         }
 
         // Event listeners
-        document.addEventListener('click', activate);
+        document.addEventListener('click', userInteracted);
         document.addEventListener('touchstart', function(e) {
             e.preventDefault();
-            activate();
+            userInteracted();
+        });
+        document.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            userInteracted();
         });
     </script>
 </body>
